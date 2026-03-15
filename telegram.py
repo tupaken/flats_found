@@ -1,18 +1,34 @@
+from __future__ import annotations
+
+import os
+
 import telebot
-import os 
 from dotenv import load_dotenv
 
-class BotManager():
 
+class TelegramNotifier:
     def __init__(self):
-        self.bot=telebot.TeleBot(os.getenv("Telegram_API"))
-        self.users=os.getenv("Users")
-    def run(self):
-        @self.bot.message_handler(commands=['start'])
-        def start(message):
-            if message.chat.id in self.users:
-                self.bot.send_message(message.chat.id,"Hi, I send you new flats")
-                
+        load_dotenv()
 
+        token = os.getenv("Telegram_API")
+        users_raw = os.getenv("USERS", "")
 
+        if not token:
+            raise ValueError("Telegram_API fehlt in der .env")
+        if not users_raw.strip():
+            raise ValueError("USERS fehlt in der .env")
 
+        self.bot = telebot.TeleBot(token)
+        self.chat_ids = self._parse_chat_ids(users_raw)
+
+    @staticmethod
+    def _parse_chat_ids(users_raw: str) -> list[str]:
+        normalized = users_raw.replace(";", ",").replace(" ", ",")
+        chat_ids = [item.strip() for item in normalized.split(",") if item.strip()]
+        if not chat_ids:
+            raise ValueError("USERS enthaelt keine gueltigen Chat IDs")
+        return chat_ids
+
+    def send_message(self, text: str) -> None:
+        for chat_id in self.chat_ids:
+            self.bot.send_message(chat_id, text, disable_web_page_preview=False)

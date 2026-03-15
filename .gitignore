@@ -39,3 +39,6 @@ dist/
 # Playwright artifacts
 playwright-report/
 test-results/
+
+# Runtime state
+seen_flats.json
